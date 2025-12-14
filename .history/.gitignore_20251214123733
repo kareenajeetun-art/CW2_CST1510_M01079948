@@ -21,10 +21,3 @@ env/
 # Logs
 *.log
 
-# Streamlit secrets (NEVER commit these)
-my_app/.streamlit/secrets.toml
-
-# Local databases (optional but recommended)
-DATA/*.db
-*.sqlite
-*.sqlite3

@@ -1,6 +1,7 @@
 import pandas as pd
 from pathlib import Path
 from app.data.db import connect_database
+from app.data.datasets import insert_dataset_metadata
 
 
 def insert_dataset_metadata(dataset_name, category, source, last_updated,
@@ -92,7 +93,40 @@ def datasets_recently_updated(conn, days=90):
     """
     return pd.read_sql_query(query, conn)
 
+import sqlite3
+from pathlib import Path
 
+DB_PATH = Path("DATA/intelligence_platform.db")
+
+
+def insert_dataset_metadata(
+    name: str,
+    source: str,
+    description: str,
+    owner: str,
+    created_date: str
+):
+    """
+    Insert a new dataset metadata record into the database.
+    """
+
+    if not DB_PATH.exists():
+        raise FileNotFoundError("Database file not found.")
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        INSERT INTO datasets_metadata
+        (name, source, description, owner, created_date)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (name, source, description, owner, created_date)
+    )
+
+    conn.commit()
+    conn.close()
 
 def load_csv_to_table_datasets_metadata(conn, csv_path, table_name):
     """Load dataset metadata CSV into the database."""

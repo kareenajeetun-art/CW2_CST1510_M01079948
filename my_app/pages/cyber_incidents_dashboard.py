@@ -1,8 +1,7 @@
-# pages/1_Cyber_Incidents_Dashboard.py
 """
 Cyber Incidents Dashboard (DB + CSV)
  - Loads cyber_incidents from the SQLite DB (DATA/intelligence_platform.db)
-   using your Week-8 helper if available, otherwise via sqlite3 + pandas.
+ - via sqlite3 + pandas.
  - Loads DATA/cyber_incidents.csv directly.
  - Lets the user choose: view DB table / CSV / combined dataset.
  - Displays KPIs, charts, and the table. Allows adding a new incident (via DB insert function if available).
@@ -15,10 +14,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-# IMPORTANT: set_page_config before anything that writes to the page
+#set_page_config before anything that writes to the page
 st.set_page_config(page_title="Cyber Incidents (DB + CSV)", layout="wide", page_icon="🛡️")
 
-# --- Authentication guard (same as your Home.py expects) ---
+# Authentication guard
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "username" not in st.session_state:
@@ -30,16 +29,13 @@ if not st.session_state.logged_in:
         st.switch_page("Home.py")
     st.stop()
 
-# --- Paths ---
+# Paths
 DB_PATH = Path("DATA") / "intelligence_platform.db"
 CSV_PATH = Path("DATA") / "cyber_incidents.csv"
 
-# --- Helper: connect to DB (try to reuse your app.data.db.connect_database if available) ---
+
 def connect_via_helper(db_path: Path):
-    """
-    Try to use app.data.db.connect_database if present (your Week-8 helper).
-    Return connection or raise.
-    """
+    """Try to connect via app.data.db helper if available."""
     try:
         from app.data.db import connect_database  # type: ignore
         return connect_database(str(db_path))
@@ -74,7 +70,7 @@ def get_connection(db_path: Path = DB_PATH) -> Optional[sqlite3.Connection]:
         
 
 
-# --- Load DB table into DataFrame ---
+# Load DB table into DataFrame
 # NOTE: Do NOT accept a Connection object as an argument to a cached function,
 # because sqlite3.Connection is unhashable. Instead request the connection inside the function.
 @st.cache_data(ttl=60)
@@ -100,7 +96,7 @@ def load_db_table(table_name: str = "cyber_incidents") -> pd.DataFrame:
         st.error(f"Failed to read table '{table_name}' from DB: {e}")
         return pd.DataFrame()
 
-# --- Load CSV ---
+# Load CSV
 @st.cache_data(ttl=60)
 def load_csv(path: Path) -> pd.DataFrame:
     if not path.exists():
@@ -113,7 +109,7 @@ def load_csv(path: Path) -> pd.DataFrame:
         st.error(f"Failed to read CSV {path}: {e}")
         return pd.DataFrame()
 
-# --- Try to import insert function to allow adding into DB if available ---
+# Try to import insert function to allow adding into DB if available
 def try_get_insert_function():
     """
     If you've got app.data.incidents.insert_incident, return it.
@@ -125,12 +121,12 @@ def try_get_insert_function():
     except Exception:
         return None
 
-# --- Load data ---
+# Load data
 # get_connection() is cached_resource; load_db_table() will call it internally
 db_df = load_db_table()  # no conn argument anymore
 csv_df = load_csv(CSV_PATH)
 
-# --- Merge/choose options ---
+# Merge/choose options
 st.title("🔐 Cyber Incidents")
 st.subheader(f"Hello, {st.session_state.username} — choose source to view")
 
@@ -205,7 +201,7 @@ else:
             combined = combined.drop_duplicates()
     df_display = combined.reset_index(drop=True)
 
-# --- KPIs ---
+# KPIs
 total = len(df_display)
 open_cnt = int((df_display.get("status") == "Open").sum()) if "status" in df_display.columns else 0
 critical_cnt = int((df_display.get("severity") == "Critical").sum()) if "severity" in df_display.columns else 0
@@ -217,7 +213,7 @@ col3.metric("Critical", critical_cnt)
 
 st.divider()
 
-# --- Sidebar filters (applies to displayed df) ---
+# Sidebar filters (applies to displayed df)
 with st.sidebar:
     st.header("Filters")
     if "date" in df_display.columns and not df_display["date"].isna().all():
@@ -260,7 +256,7 @@ if severity_sel and "severity" in df_filtered.columns:
 if status_sel and "status" in df_filtered.columns:
     df_filtered = df_filtered[df_filtered["status"].isin(status_sel)]
 
-# --- Charts + table ---
+# Charts + table
 st.subheader("Incidents Overview")
 
 chart_col, table_col = st.columns((1, 2))
@@ -282,7 +278,7 @@ with st.expander("Show raw (unfiltered) dataset"):
 
 st.divider()
 
-# --- Insert new incident (only works if DB connection + insert function available) ---
+# Insert new incident 
 insert_func = try_get_insert_function()
 conn = get_connection()
 can_insert = (conn is not None) and (insert_func is not None)
@@ -304,16 +300,15 @@ if can_insert:
                     insert_func(conn, t.strip(), sev, status, date=date_val)
                     st.success("Inserted into DB.")
                     load_db_table.clear()
-                    st.experimental_rerun()
+                    st.rerun()
                 except Exception as e:
                     st.error(f"Insert failed: {e}")
 else:
     st.info(
-        "Add-to-DB is disabled. To enable: ensure DATA/intelligence_platform.db exists, "
-        "and implement `insert_incident` in app/data/incidents.py (or adjust helper import)."
+       
     )
 
-# --- Logout button ---
+# Logout button
 st.divider()
 if st.button("Log out"):
     st.session_state.logged_in = False

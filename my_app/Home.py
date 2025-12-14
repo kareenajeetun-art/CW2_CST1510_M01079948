@@ -1,7 +1,7 @@
 import streamlit as st
 from auth import _read_users, hash_password, verify_password, validate_username, validate_password, _append_user
 
-st.set_page_config(page_title="Cyber Security Dashboard - Login", page_icon="🔐", layout="centered")
+st.set_page_config(page_title="Multi-Domain Intelligence Dashboard - Login", page_icon="🔐", layout="centered")
 
 
 if "logged_in" not in st.session_state:
@@ -44,7 +44,7 @@ def register_user(username, password):
     return True, "Registration successful! You may now login."
 
 
-st.title("🔐 Cyber Security Dashboard")
+st.title("🔐Multi-Domain Intelligence Dashboard")
 st.subheader("Secure Login System")
 
 tab_login, tab_register = st.tabs(["Login", "Register"])
@@ -88,9 +88,9 @@ if st.session_state.logged_in:
     st.success(f"Logged in as **{st.session_state.username}**")
     st.write("Redirecting to dashboard...")
     if st.button("Go to Dashboard"):
-        st.experimental_set_query_params(page="dashboard")
+        st.query_params["page"] = "dashboard"
         st.rerun()
-
+  
     if st.button("Log out"):
         st.session_state.logged_in = False
         st.session_state.username = None
