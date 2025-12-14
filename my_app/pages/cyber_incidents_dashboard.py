@@ -14,6 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+
 #set_page_config before anything that writes to the page
 st.set_page_config(page_title="Cyber Incidents (DB + CSV)", layout="wide", page_icon="🛡️")
 
@@ -278,38 +279,42 @@ with st.expander("Show raw (unfiltered) dataset"):
 
 st.divider()
 
-# Insert new incident 
+ #Insert new incident 
 insert_func = try_get_insert_function()
 conn = get_connection()
 can_insert = (conn is not None) and (insert_func is not None)
 
-st.subheader("Add new incident")
 if can_insert:
     with st.form("add_incident_db"):
         t = st.text_input("Title")
         sev = st.selectbox("Severity", ["Low", "Medium", "High", "Critical"])
         status = st.selectbox("Status", ["Open", "In Progress", "Resolved"])
         date_val = st.date_input("Date", value=datetime.today().date())
+
         submitted = st.form_submit_button("Add to DB")
+
         if submitted:
             if not t.strip():
                 st.error("Title required.")
             else:
                 try:
-                    # call your insert function (signature: insert_incident(conn, title, severity, status, date=...))
+                    # Expected signature:
+                    # insert_incident(conn, title, severity, status, date=...)
                     insert_func(conn, t.strip(), sev, status, date=date_val)
-                    st.success("Inserted into DB.")
+                    st.success("Incident successfully added to the database.")
                     load_db_table.clear()
                     st.rerun()
                 except Exception as e:
                     st.error(f"Insert failed: {e}")
 else:
     st.info(
-       
+        "Database insert is unavailable. "
+        "Ensure the database exists and `insert_incident` is implemented."
     )
 
 # Logout button
 st.divider()
+
 if st.button("Log out"):
     st.session_state.logged_in = False
     st.session_state.username = ""
